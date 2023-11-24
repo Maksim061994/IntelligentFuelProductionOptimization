@@ -19,3 +19,6 @@ docker exec -it data_science_ui superset init;
  
 6. Авторизоваться в Superset используя имя и пароль заданные выше
  - Загрузить Dashboard из сохраненного шаблона: 
+
+##
+Notebook c слогоритмом находится в `research/epsilon_greedy.ipynb`
