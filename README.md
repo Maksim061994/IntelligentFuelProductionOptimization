@@ -26,4 +26,4 @@ login: demo
 pass: 123456Qw@  
 
 ## Алгоритм
-Notebook c алогоритмом находится в `research/epsilon_greedy.ipynb`
+Notebook'и c алогоритмом находится в каталоге `research`
