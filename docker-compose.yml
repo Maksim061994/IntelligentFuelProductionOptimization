@@ -1,0 +1,167 @@
+version: "3.7"
+
+services:
+
+  superset:
+    restart: unless-stopped
+    image: apache/superset:latest
+    container_name: data_science_ui
+    hostname: superset
+    env_file: .env
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - "8089:${SUPERSET_PORT}"
+    depends_on:
+      - clickhouse
+      - postgresql
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8088"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "6"
+    networks:
+      data_science:
+        ipv4_address: 193.168.20.2
+     
+  clickhouse:
+    restart: always
+    image: clickhouse/clickhouse-server:23.9.5.29
+    container_name: data_science_clickhouse
+    hostname: clickhouse
+    env_file: .env
+    environment:
+      - TZ=Europe/Moscow
+      - ALLOW_EMPTY_PASSWORD=no
+    ports:
+      - "${DATABASE_PORT}:${DATABASE_PORT}"
+    volumes:
+      - ./clickhouse:/var/lib/clickhouse
+      - ./log/clickhouse:/var/log/clickhouse-server
+      - ./config/clickhouse:/etc/clickhouse-server
+      - ./config/clickhouse_backup.yml:/etc/clickhouse-backup/config.yml
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8123/"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    cap_add: 
+      - SYS_NICE
+      - NET_ADMIN
+      - IPC_LOCK
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 262144
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "5"
+    networks:
+      data_science:
+        ipv4_address: 193.168.20.3
+
+  postgresql:
+    restart: always
+    image: postgres:15.4
+    container_name: data_science_postgresql
+    hostname: postgresql
+    env_file: .env
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PW}
+      - PGDATA=/var/lib/postgresql/data
+    volumes:
+      - /dev/urandom:/dev/random
+      - ./pgdata:/var/lib/postgresql/data
+      - ./pg_init/init.sql:/docker-entrypoint-initdb.d/10-init.sql
+    command: >
+     postgres
+       -c port=5433
+       -c max_connections=500
+       -c shared_buffers=4GB
+       -c work_mem=16MB
+       -c maintenance_work_mem=512MB
+       -c random_page_cost=1.1
+       -c effective_cache_size=4GB
+       -c log_destination=stderr
+       -c logging_collector=on
+       -c log_filename='postgresql-%G-%m.log'
+       -c log_truncate_on_rotation=off
+       -c log_rotation_age=10d
+       -c client_min_messages=warning
+       -c log_min_messages=warning
+       -c log_min_error_statement=error
+       -c log_line_prefix='%t %u@%r:%d [%p] '
+       -c log_min_duration_statement=200ms
+       -c log_timezone='Europe/Moscow'
+       -c temp_file_limit=10GB
+       -c idle_in_transaction_session_timeout=30s
+       -c lock_timeout=0
+       -c statement_timeout=6000s
+       -c shared_preload_libraries=pg_stat_statements
+       -c pg_stat_statements.max=10000
+       -c pg_stat_statements.track=all
+       -c timezone='Europe/Moscow'
+       -c track_counts=on
+       -c autovacuum=on
+       -c track_activities=on
+       -c track_io_timing=on       
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-p", "5433" ]
+      interval: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "5"
+    networks:
+      data_science:
+        ipv4_address: 193.168.20.4
+
+  api:
+    restart: unless-stopped
+    image: api_data_science:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: data_science_api
+    hostname: api
+    command: gunicorn app.main:app -k uvicorn.workers.UvicornWorker --log-config=logconf.ini
+    environment:
+      - ENVIRONMENT=
+      - TZ=Europe/Moscow
+      - TOKENIZERS_PARALLELISM=true
+    ports:
+      - 3025:8000
+    volumes:
+      - ./app:/opt/app
+      - ./config/gunicorn.conf.py:/opt/gunicorn.conf.py
+      - ./config/logconf.ini:/opt/logconf.ini
+      - ./.env:/opt/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "5"
+    networks:
+      data_science:
+        ipv4_address: 193.168.20.10
+        
+networks:
+  data_science:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 193.168.20.0/24
