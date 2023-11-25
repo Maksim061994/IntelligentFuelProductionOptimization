@@ -4,6 +4,7 @@ import itertools
 import numpy as np
 import torch
 import pandahouse as ph
+import datetime
 from app.helpers.db.clickhouse_connector import ClickhouseConnector
 import asyncio
 from app.config.settings import get_settings
@@ -286,6 +287,9 @@ class OvenTimeOptimizationModel:
                     .reset_index()
 
                 df_result = df_result.sort_values(['id_oven', 'id_serie', ('dt', 'start')], ascending=True)
+                df_result['duration'] = pd.to_datetime(df_result[('dt', 'end')]) - pd.to_datetime(
+                    df_result[('dt', 'start')]) + datetime.timedelta(minutes=1)
+                df_result['duration'] = df_result['duration'].apply(lambda x: str(x)[7:])
                 df_result.columns = ['_'.join(col) for col in df_result.columns]
                 excel_file = BytesIO()
                 df_result.to_excel(excel_file, index=False, sheet_name="Sheet1")
