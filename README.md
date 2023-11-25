@@ -17,7 +17,7 @@ docker exec -it data_science_ui superset init;
  - ip_host:8089 - Superset (логин и пароль в пункте 4 текущего документа)
  - ip_host:3025/docs - API
 
-6. Выполнить скрипт `docs/scripts/ch_create_table.sql` в СУБД Clickhouse для создания таблицы
+6. Выполнить скрипты `app/scripts/create_db.sql` и `app/scripts/create_table.sql` в СУБД Clickhouse для создания таблицы
  
 7. Авторизоваться в Superset используя имя и пароль заданные выше
  - Загрузить Dashboard'ы из сохраненных шаблонов: `docs/superset_dashboards`
