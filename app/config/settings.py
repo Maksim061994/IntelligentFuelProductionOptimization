@@ -16,12 +16,6 @@ class Settings(BaseSettings):
     db_ch_user: str
     db_ch_protocol: str
 
-    # mlflow
-    mlflow_tracking_uri: str
-    mlflow_s3_endpoint_url: str
-    aws_access_key_id: str
-    aws_secret_access_key: str
-
     # rl settings
     db_oven_time_optimization: str
     table_series_upload_ovens: str

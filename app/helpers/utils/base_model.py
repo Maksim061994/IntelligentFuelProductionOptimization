@@ -9,10 +9,10 @@ settings = get_settings()
 
 class BaseModel:
 
-    os.environ['MLFLOW_S3_ENDPOINT_URL'] = settings.mlflow_s3_endpoint_url
-    os.environ['AWS_ACCESS_KEY_ID'] = settings.aws_access_key_id
-    os.environ['AWS_SECRET_ACCESS_KEY'] = settings.aws_secret_access_key
-    mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
+    # os.environ['MLFLOW_S3_ENDPOINT_URL'] = settings.mlflow_s3_endpoint_url
+    # os.environ['AWS_ACCESS_KEY_ID'] = settings.aws_access_key_id
+    # os.environ['AWS_SECRET_ACCESS_KEY'] = settings.aws_secret_access_key
+    # mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
 
     def __init__(self):
         self.client_mf = mlflow.tracking.MlflowClient()

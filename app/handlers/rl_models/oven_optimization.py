@@ -278,11 +278,14 @@ class OvenTimeOptimizationModel:
             if len(result) > 0:
                 cols = list(result[0].keys())
                 data = pd.DataFrame([dict(zip(cols, el.values())) for el in result])
-                df = data.sort_values(['dt'], ascending=True)
-                df_result = df.groupby(['id_oven', 'id_serie', 'operation_serie']) \
+                df = data[data['id_serie'] != -1]
+                df_result = df.sort_values(['id_oven', 'id_serie', 'dt'], ascending=False).groupby(
+                    ['id_oven', 'id_serie', 'operation_serie']) \
                     .agg({'dt': ['min', 'max']}) \
                     .rename(columns={'min': 'start', 'max': 'end'}) \
                     .reset_index()
+
+                df_result = df_result.sort_values(['id_oven', 'id_serie', ('dt', 'start')], ascending=True)
                 df_result.columns = ['_'.join(col) for col in df_result.columns]
                 excel_file = BytesIO()
                 df_result.to_excel(excel_file, index=False, sheet_name="Sheet1")
